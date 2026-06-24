@@ -14,8 +14,8 @@ This assignment is scoped for 4–5 hours. If you hit that limit, submit what yo
 
 ## Getting Started
 
-You'll need Node.js 18+ and a free Supabase project.
-
+You'll need Node.js 18+ and a free Supabase project.   
+   
 ```bash
 # 1. Fork this repo and clone your fork
 npm install
