@@ -2,8 +2,12 @@
 
 ## Deployed Contract
 
+The `SalaryDistributor` contract is already deployed and live on Polygon Amoy testnet — no deployment steps required.
+
 **Network:** Polygon Amoy Testnet
 **SalaryDistributor:** `0xafa980c107e37c1e1d099b0dc4199baed07bda22`
+
+To trigger payouts you only need to provide a **private key for an authorised payer wallet** (`PAYER_PRIVATE_KEY`) in your `.env.local`.
 
 ---
 
@@ -12,8 +16,7 @@
 ### Prerequisites
 
 - Node.js 18+
-- A free [Supabase](https://supabase.com) project
-- [Foundry](https://book.getfoundry.sh/getting-started/installation) (for contract work)
+- A Supabase project
 
 ### 1. Install dependencies
 
@@ -39,7 +42,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 SETUP_SECRET=generate_with_openssl_rand_hex_32
 CRON_SECRET=generate_with_openssl_rand_hex_32
 
-# Contract
+# Contract — already deployed, just provide the payer private key
 PAYER_PRIVATE_KEY=0x...
 CONTRACT_ADDRESS=0xafa980c107e37c1e1d099b0dc4199baed07bda22
 RPC_URL=https://rpc-amoy.polygon.technology
@@ -61,11 +64,11 @@ App runs at `http://localhost:3000`.
 
 ## Smart Contract (Foundry)
 
-The contract lives in the `contracts/` folder as a standalone Foundry project.
+The contract source and tests live in the `contracts/` folder as a standalone Foundry project.
 
 ```
 contracts/
-├── src/SalaryDistributor.sol     # main contract
+├── src/SalaryDistributor.sol
 ├── script/
 │   ├── DeploySalaryDistributor.s.sol
 │   └── HelperConfig.s.sol
@@ -78,33 +81,3 @@ contracts/
 cd contracts
 forge test
 ```
-
-### Deploy to Polygon Amoy
-
-Create `contracts/.env`:
-
-```bash
-DEPLOYER_PRIVATE_KEY=0x...   # deployer wallet private key (becomes contract owner)
-PAYER_ADDRESS=0x...          # wallet that will be authorised to call distribute()
-```
-
-Then run:
-
-```bash
-cd contracts
-forge script script/DeploySalaryDistributor.s.sol \
-  --rpc-url https://rpc-amoy.polygon.technology \
-  --env-file .env \
-  --broadcast
-```
-
-The script deploys the contract and immediately authorises the payer address by calling `setPayer()`.
-
----
-
-## What I'd Improve With More Time
-
-- **Frontend validation** — validate Ethereum addresses and Wei amounts client-side before submitting, with clearer error messages.
-- **Contract verification** — verify the contract on Polygonscan so the ABI is publicly readable.
-- **Payout history** — store past transactions in Supabase and display them on the payouts page.
-- **Amount input UX** — let users input amounts in MATIC rather than raw Wei and convert before sending.
