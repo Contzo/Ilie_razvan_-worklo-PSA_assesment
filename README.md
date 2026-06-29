@@ -1,84 +1,110 @@
 # Worklo — Smart Contract Assignment
 
-Welcome to the Worklo Smart Contract Assignment! 
+## Deployed Contract
 
-Worklo is a PSA (Professional Services Automation) platform for managing projects, tasks, time tracking, and client relationships. In this exercise you'll build a real on-chain salary distribution feature — writing a Solidity contract, wiring it into the backend, and triggering it from the UI.
+**Network:** Polygon Amoy Testnet
+**SalaryDistributor:** `0xafa980c107e37c1e1d099b0dc4199baed07bda22`
 
-Focus on quality over completeness. Submit what you have when time is up.
+---
 
-If you have any questions, feel free to reach out — we're happy to clarify anything.
-                                   
-## Time Consideration
+## How to Run
 
-This assignment is scoped for 4–5 hours. If you hit that limit, submit what you have and use this `README.md` to describe what you'd finish next.
+### Prerequisites
 
-## Getting Started
+- Node.js 18+
+- A free [Supabase](https://supabase.com) project
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) (for contract work)
 
-You'll need Node.js 18+ and a free Supabase project.   
-   
+### 1. Install dependencies
+
 ```bash
-# 1. Fork this repo and clone your fork
 npm install
-
-# 2. Set up environment variables
-cp .env.local.template .env.local
-# Fill in your Supabase URL and keys in .env.local
-
-# 3. Run the database schema
-# → Supabase dashboard → SQL Editor → paste and run supabase/schema.sql
-
-# 4. Start the app
-npm run dev              # Next.js on http://localhost:3000
 ```
 
-## Task Overview
+### 2. Set up environment variables
 
-Build a `SalaryDistributor` smart contract and wire it into the running Worklo platform so a superadmin can trigger a payout from the UI.
+```bash
+cp .env.local.template .env.local
+```
 
-**Part A — Smart contract**
+Fill in the following in `.env.local`:
 
-- Write `contracts/SalaryDistributor.sol` using Solidity ^0.8.20 and OpenZeppelin
-- Implement `distribute(address[], uint256[])` restricted to authorised payer addresses
-- Add owner-only `setPayer`, `pause`, and `unpause` — both `distribute` and `setPayer` must revert when paused
-- Use custom errors for: mismatched arrays, empty batch, zero address, insufficient `msg.value`
-- Refund excess `msg.value` to `msg.sender`
-- Emit `Distributed(address indexed recipient, uint256 amount)` and `BatchCompleted(uint256 totalAmount, uint256 recipientCount)`
-- Write tests covering: happy path, unauthorised caller, paused state, mismatched arrays, excess refund
+```bash
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=sb_publishable_...
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-**Part B — API route**
+# Security
+SETUP_SECRET=generate_with_openssl_rand_hex_32
+CRON_SECRET=generate_with_openssl_rand_hex_32
 
-Add `app/api/payouts/trigger/route.js` following the existing route patterns in `app/api/`:
+# Contract
+PAYER_PRIVATE_KEY=0x...
+CONTRACT_ADDRESS=0xafa980c107e37c1e1d099b0dc4199baed07bda22
+RPC_URL=https://rpc-amoy.polygon.technology
+```
 
-- Auth: superadmin only — use `requireAuthentication` from `lib/server-guards.ts`
-- Body: `{ recipients: string[], amountsWei: string[] }`
-- Call `distribute()` on the deployed contract via ethers.js v6 using env vars `PAYER_PRIVATE_KEY` and `CONTRACT_ADDRESS`
-- Return `{ txHash }`
+### 3. Run the database schema
 
+Go to your Supabase dashboard → SQL Editor → paste and run `supabase/schema.sql`.
 
-**Part C — Frontend**
+### 4. Start the app
 
-Add `app/admin/payouts/page.tsx`:
+```bash
+npm run dev
+```
 
-- Guard: redirect non-superadmin users to `/dashboard`
-- Form with recipient addresses and amounts inputs
-- **Trigger Payout** button that calls `POST /api/payouts/trigger` via `apiFetch()`
+App runs at `http://localhost:3000`.
 
-**[Bonus]** Deploy to Polygon Amoy testnet and include the contract address in your README.
+---
 
-## How We Evaluate
+## Smart Contract (Foundry)
 
-- Smart contract — security, custom errors, OZ usage | 40% |
-- API route — auth guard, ethers.js integration, error handling | 25% |
-- Frontend — TypeScript, loading/error states, existing patterns | 20% |
-- README — reasoning on key decisions and trade-offs | 15% |
+The contract lives in the `contracts/` folder as a standalone Foundry project.
 
-## Submission Guidelines
+```
+contracts/
+├── src/SalaryDistributor.sol     # main contract
+├── script/
+│   ├── DeploySalaryDistributor.s.sol
+│   └── HelperConfig.s.sol
+└── test/
+```
 
-Don't open a PR to this repo. Share your fork URL.
+### Run tests
 
-In your forked repository, include a README that explains:
+```bash
+cd contracts
+forge test
+```
 
-- How to run your project.
-- What you'd improve or do differently if you had more time.
+### Deploy to Polygon Amoy
 
-Make sure your code runs locally based on the instructions in your README.
+Create `contracts/.env`:
+
+```bash
+DEPLOYER_PRIVATE_KEY=0x...   # deployer wallet private key (becomes contract owner)
+PAYER_ADDRESS=0x...          # wallet that will be authorised to call distribute()
+```
+
+Then run:
+
+```bash
+cd contracts
+forge script script/DeploySalaryDistributor.s.sol \
+  --rpc-url https://rpc-amoy.polygon.technology \
+  --env-file .env \
+  --broadcast
+```
+
+The script deploys the contract and immediately authorises the payer address by calling `setPayer()`.
+
+---
+
+## What I'd Improve With More Time
+
+- **Frontend validation** — validate Ethereum addresses and Wei amounts client-side before submitting, with clearer error messages.
+- **Contract verification** — verify the contract on Polygonscan so the ABI is publicly readable.
+- **Payout history** — store past transactions in Supabase and display them on the payouts page.
+- **Amount input UX** — let users input amounts in MATIC rather than raw Wei and convert before sending.
